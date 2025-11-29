@@ -7,7 +7,7 @@ const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL!;
 const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID);
 
 // Export ABI and Address
-export const vehicleNftAbi = vehicleNftJson.abi as const;
+export const vehicleNftAbi = vehicleNftJson.abi;
 export const vehicleNftAddress = CONTRACT_ADDRESS;
 
 // Types
