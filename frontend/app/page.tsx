@@ -17,86 +17,59 @@ export default function Marketplace() {
 
     const { addActivity } = useActivityFeedStore();
 
-    useEffect(() => {
-        const loadVehicles = async () => {
-            setLoading(true);
-            const tempVehicles: VehicleView[] = [];
+    const fetchVehicles = async () => {
+        setLoading(true);
+        const tempVehicles: VehicleView[] = [];
 
-            // Fetch first 10 for now to be faster
-            for (let i = 1; i <= 10; i++) {
-                try {
-                    const vehicleData = await readContract(config, {
-                        address: vehicleNftAddress,
-                        abi: vehicleNftAbi,
-                        functionName: 'getVehicle',
-                        args: [BigInt(i)],
-                    }) as any;
-
-                    // Only process if it exists (price > 0 or owner != zero)
-                    // Assuming simple check for now
-
-                    const tokenUri = await readContract(config, {
-                        address: vehicleNftAddress,
-                        abi: vehicleNftAbi,
-                        functionName: 'tokenURI',
-                        args: [BigInt(i)],
-                    }) as string;
-
-                    const metadata = await fetchMetadata(tokenUri);
-
-                    tempVehicles.push({
-                        tokenId: i,
-                        currentOwner: vehicleData.currentOwner,
-                        price: vehicleData.price,
-                        listed: vehicleData.listed,
-                        deliveryStage: vehicleData.deliveryStage,
-                        metadata: metadata,
-                    });
-                } catch (err) {
-                    // Skip if not minted or error
-                }
-            }
-            setVehicles(tempVehicles);
-            setLoading(false);
-        };
-
-        loadVehicles();
-    }, []);
-
-    const handleBuy = async () => {
-        if (!selectedVehicle) return;
-
-        if (selectedVehicle.type === 'demo') {
-            addActivity({
-                type: 'PURCHASE',
-                message: `Simulated purchase of ${selectedVehicle.data.name}`,
-            });
-            alert(`Demo purchase successful for ${selectedVehicle.data.name}!`);
-            setSelectedVehicle(null);
-        } else {
-            // On-chain purchase
+        // Fetch first 10 for now to be faster
+        for (let i = 1; i <= 10; i++) {
             try {
-                const tx = await writeContract(config, {
+                const vehicleData = await readContract(config, {
                     address: vehicleNftAddress,
                     abi: vehicleNftAbi,
-                    functionName: 'purchaseVehicle',
-                    args: [BigInt(selectedVehicle.data.tokenId)],
-                    value: selectedVehicle.data.price,
-                });
+                    functionName: 'getVehicle',
+                    args: [BigInt(i)],
+                }) as any;
 
-                addActivity({
-                    type: 'PURCHASE',
-                    message: `Purchase transaction sent for Vehicle #${selectedVehicle.data.tokenId}`,
-                    txHash: tx,
-                });
+                // Only process if it exists (price > 0 or owner != zero)
+                // Assuming simple check for now
 
-                alert('Transaction sent! Check your wallet.');
-                setSelectedVehicle(null);
-            } catch (error) {
-                console.error("Purchase failed:", error);
-                alert('Purchase failed. See console for details.');
+                const tokenUri = await readContract(config, {
+                    address: vehicleNftAddress,
+                    abi: vehicleNftAbi,
+                    functionName: 'tokenURI',
+                    args: [BigInt(i)],
+                }) as string;
+
+                const metadata = await fetchMetadata(tokenUri);
+
+                tempVehicles.push({
+                    tokenId: i,
+                    currentOwner: vehicleData.currentOwner,
+                    price: vehicleData.price,
+                    listed: vehicleData.listed,
+                    deliveryStage: vehicleData.deliveryStage,
+                    metadata: metadata,
+                });
+            } catch (err) {
+                // Skip if not minted or error
             }
         }
+        setVehicles(tempVehicles);
+        setLoading(false);
+    };
+
+    useEffect(() => {
+        fetchVehicles();
+    }, []);
+
+    const handlePurchaseComplete = ({ demo }: { demo?: boolean } = {}) => {
+        if (!demo) {
+            // Refresh on-chain data
+            fetchVehicles();
+        }
+        // For demo, we don't need to do anything as the list is static
+        // The drawer stays open on success screen
     };
 
     return (
@@ -198,7 +171,7 @@ export default function Marketplace() {
                 variant={selectedVehicle?.type === 'demo' ? 'demo' : 'onchain'}
                 demoData={selectedVehicle?.type === 'demo' ? selectedVehicle.data : undefined}
                 onchainData={selectedVehicle?.type === 'onchain' ? selectedVehicle.data : undefined}
-                onBuy={handleBuy}
+                onPurchaseComplete={handlePurchaseComplete}
             />
         </div>
     );
