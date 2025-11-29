@@ -1,57 +1,107 @@
 import React from 'react';
-import Link from 'next/link';
-import { formatEther } from 'viem';
-import { VehicleView } from '../lib/contracts';
-import StatPill from './StatPill';
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+export type VehicleCardVariant = "demo" | "onchain";
 
 interface VehicleCardProps {
-    vehicle: VehicleView;
+    variant: VehicleCardVariant;
+    id: string;
+    name: string;
+    model?: string;
+    year?: string;
+    image?: string;
+    priceLabel: string;
+    listed?: boolean;
+    deliveryStageLabel?: string;
+    onClick?: () => void;
 }
 
-export default function VehicleCard({ vehicle }: VehicleCardProps) {
-    const { tokenId, metadata, price, listed } = vehicle;
-
-    const imageUrl = metadata?.image || 'https://via.placeholder.com/600x400?text=No+Image';
-    const title = metadata?.name || `Vehicle #${tokenId}`;
-    const subtitle = metadata?.model ? `${metadata.year || ''} ${metadata.model}` : `Token ID: ${tokenId}`;
+export default function VehicleCard({
+    variant,
+    id,
+    name,
+    model,
+    year,
+    image,
+    priceLabel,
+    listed,
+    deliveryStageLabel,
+    onClick
+}: VehicleCardProps) {
+    const imageUrl = image || 'https://via.placeholder.com/600x400?text=No+Image';
 
     return (
-        <div className="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-xl hover:shadow-gray-200/50 transition-all duration-300 flex flex-col h-full">
-            {/* Image Area */}
-            <div className="relative h-56 bg-gray-50 p-6 flex items-center justify-center">
+        <div
+            onClick={onClick}
+            className={twMerge(
+                "group relative flex flex-col h-full cursor-pointer",
+                "bg-zinc-900 rounded-3xl overflow-hidden",
+                "border border-white/10 shadow-lg hover:shadow-2xl hover:shadow-black/50",
+                "transition-all duration-300 hover:-translate-y-1"
+            )}
+        >
+            {/* Image Section */}
+            <div className="relative h-64 bg-zinc-800/50 overflow-hidden">
                 <img
                     src={imageUrl}
-                    alt={title}
-                    className="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500"
+                    alt={name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                 />
-                <div className="absolute top-4 right-4">
-                    {listed ? <StatPill label="Listed" color="green" /> : <StatPill label="Unlisted" color="gray" />}
+
+                {/* Status Badge */}
+                <div className="absolute top-4 right-4 flex gap-2">
+                    {variant === 'demo' && (
+                        <span className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-300 backdrop-blur-md rounded-full border border-blue-500/30">
+                            Demo Vehicle
+                        </span>
+                    )}
+                    {listed && variant === 'onchain' && (
+                        <span className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 backdrop-blur-md rounded-full border border-emerald-500/30">
+                            Listed
+                        </span>
+                    )}
+                    {deliveryStageLabel && (
+                        <span className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider bg-white/10 text-white/80 backdrop-blur-md rounded-full border border-white/10">
+                            {deliveryStageLabel}
+                        </span>
+                    )}
                 </div>
             </div>
 
-            {/* Content Area */}
-            <div className="p-6 flex flex-col flex-1">
-                <div className="mb-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-1 truncate">{title}</h3>
-                    <p className="text-sm text-gray-500 font-medium">{subtitle}</p>
+            {/* Content Section */}
+            <div className="p-6 flex flex-col flex-1 bg-gradient-to-b from-zinc-900 to-black">
+                <div className="mb-4">
+                    <h3 className="text-xl font-semibold text-white mb-1 truncate tracking-tight">
+                        {name}
+                    </h3>
+                    <div className="flex items-center gap-2 text-sm text-zinc-400 font-medium">
+                        {year && <span>{year}</span>}
+                        {model && (
+                            <>
+                                <span className="w-1 h-1 rounded-full bg-zinc-600" />
+                                <span>{model}</span>
+                            </>
+                        )}
+                    </div>
                 </div>
 
-                <div className="mt-auto flex items-center justify-between">
+                <div className="mt-auto flex items-end justify-between border-t border-white/10 pt-4">
                     <div className="flex flex-col">
-                        <span className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Price</span>
-                        <span className="text-lg font-bold text-gray-900">
-                            {listed ? `${formatEther(price)} MON` : '---'}
+                        <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-1">
+                            Price
+                        </span>
+                        <span className="text-lg font-bold text-white tracking-tight">
+                            {priceLabel}
                         </span>
                     </div>
 
-                    <Link
-                        href={`/vehicle/${tokenId}`}
-                        className="px-6 py-2 text-sm font-bold text-gray-900 bg-white border border-gray-200 hover:border-gray-900 hover:bg-gray-50 rounded-lg transition-all"
-                    >
+                    <button className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-white bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
                         View Details
-                    </Link>
+                    </button>
                 </div>
             </div>
         </div>
     );
 }
+
