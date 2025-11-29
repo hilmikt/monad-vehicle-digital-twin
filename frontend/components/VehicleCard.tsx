@@ -15,6 +15,10 @@ interface VehicleCardProps {
     listed?: boolean;
     deliveryStageLabel?: string;
     onClick?: () => void;
+    onRent?: () => void;
+    showMarketActions?: boolean;
+    customBadge?: React.ReactNode;
+    latestService?: string;
 }
 
 export default function VehicleCard({
@@ -27,7 +31,11 @@ export default function VehicleCard({
     priceLabel,
     listed,
     deliveryStageLabel,
-    onClick
+    onClick,
+    onRent,
+    showMarketActions = true,
+    customBadge,
+    latestService
 }: VehicleCardProps) {
     const imageUrl = image || 'https://via.placeholder.com/600x400?text=No+Image';
 
@@ -51,11 +59,7 @@ export default function VehicleCard({
 
                 {/* Status Badge */}
                 <div className="absolute top-4 right-4 flex gap-2">
-                    {variant === 'demo' && (
-                        <span className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-300 backdrop-blur-md rounded-full border border-blue-500/30">
-                            Demo Vehicle
-                        </span>
-                    )}
+                    {/* Demo Badge Removed */}
                     {listed && variant === 'onchain' && (
                         <span className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 backdrop-blur-md rounded-full border border-emerald-500/30">
                             Listed
@@ -66,6 +70,7 @@ export default function VehicleCard({
                             {deliveryStageLabel}
                         </span>
                     )}
+                    {customBadge}
                 </div>
             </div>
 
@@ -86,6 +91,20 @@ export default function VehicleCard({
                     </div>
                 </div>
 
+                {/* Latest Service Display */}
+                {latestService && (
+                    <div className="mb-4 p-3 bg-zinc-800/50 border border-white/5 rounded-xl flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-orange-500/10 text-orange-400 border-orange-500/20 uppercase">
+                                Service
+                            </span>
+                        </div>
+                        <p className="text-xs text-zinc-300 font-medium leading-snug break-words">
+                            {latestService}
+                        </p>
+                    </div>
+                )}
+
                 <div className="mt-auto flex items-end justify-between border-t border-white/10 pt-4">
                     <div className="flex flex-col">
                         <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold mb-1">
@@ -96,12 +115,24 @@ export default function VehicleCard({
                         </span>
                     </div>
 
-                    <button className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-white bg-white/10 hover:bg-white/20 rounded-lg transition-colors">
-                        View Details
-                    </button>
+                    {showMarketActions && (
+                        <div className="flex gap-2">
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onRent?.();
+                                }}
+                                className="px-3 py-2 text-xs font-bold uppercase tracking-wider text-white bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+                            >
+                                Rent
+                            </button>
+                            <button className="px-3 py-2 text-xs font-bold uppercase tracking-wider text-black bg-white hover:bg-gray-200 rounded-lg transition-colors">
+                                Buy
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
     );
 }
-

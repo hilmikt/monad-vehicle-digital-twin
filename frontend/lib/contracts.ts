@@ -2,9 +2,10 @@ import { createPublicClient, http } from 'viem';
 import vehicleNftJson from "../../artifacts/contracts/VehicleNFT.sol/VehicleNFT.json";
 
 // Environment variables
-const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`;
-const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL!;
-const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID);
+// Environment variables
+const CONTRACT_ADDRESS = (process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || "0xFB143834dE4d0C8b44b9EF48630052CEd91Fde66") as `0x${string}`;
+const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || "https://testnet-rpc.monad.xyz";
+const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID || 10143);
 
 // Export ABI and Address
 export const vehicleNftAbi = vehicleNftJson.abi;
@@ -28,6 +29,7 @@ export interface VehicleView {
     listed: boolean;
     deliveryStage: DeliveryStage;
     metadata?: VehicleMetadata | null;
+    serviceRecords?: ServiceEventView[];
 }
 
 export interface ServiceEventView {

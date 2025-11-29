@@ -20,7 +20,7 @@ contract VehicleNFT is ERC721, Ownable {
     /// @notice Core vehicle state
     struct Vehicle {
         address currentOwner;
-        uint256 price;      // in wei
+        uint256 price; // in wei
         bool listed;
         DeliveryStage deliveryStage;
     }
@@ -76,6 +76,8 @@ contract VehicleNFT is ERC721, Ownable {
         string description,
         address indexed addedBy
     );
+
+    event ServiceRecordAdded(uint256 indexed tokenId, string note);
 
     // --------- Constructor ---------
 
@@ -225,7 +227,43 @@ contract VehicleNFT is ERC721, Ownable {
         emit DeliveryStageAdvanced(tokenId, v.deliveryStage);
     }
 
-    /// @notice Add a service event to a vehicle
+    /// @notice Add a service record to a vehicle
+    /// @dev Only the vehicle owner can add service records
+    /// @param tokenId Vehicle token ID
+    /// @param serviceNote Note describing the service
+    function addServiceRecord(
+        uint256 tokenId,
+        string memory serviceNote
+    ) external onlyExistingToken(tokenId) {
+        require(
+            ownerOf(tokenId) == msg.sender,
+            "VehicleNFT: caller is not vehicle owner"
+        );
+        require(bytes(serviceNote).length > 0, "VehicleNFT: empty note");
+
+        ServiceEvent memory ev = ServiceEvent({
+            timestamp: block.timestamp,
+            description: serviceNote,
+            addedBy: msg.sender
+        });
+
+        _serviceHistory[tokenId].push(ev);
+
+        emit ServiceRecordAdded(tokenId, serviceNote);
+        // Also emit the old event for backward compatibility if needed, or just rely on the new one.
+        // The user asked for specific event signature.
+    }
+
+    /// @notice Get all service records for a given vehicle (alias for getServiceEvents but matching user request)
+    /// @param tokenId Vehicle token ID
+    /// @return Array of ServiceEvent structs
+    function getServiceRecords(
+        uint256 tokenId
+    ) external view onlyExistingToken(tokenId) returns (ServiceEvent[] memory) {
+        return _serviceHistory[tokenId];
+    }
+
+    /// @notice Add a service event to a vehicle (Legacy/Demo)
     /// @dev Any address can add service events in this demo;
     ///      in production, restrict to authorized service centers.
     /// @param tokenId Vehicle token ID
@@ -257,12 +295,7 @@ contract VehicleNFT is ERC721, Ownable {
     /// @return Array of ServiceEvent structs
     function getServiceEvents(
         uint256 tokenId
-    )
-        external
-        view
-        onlyExistingToken(tokenId)
-        returns (ServiceEvent[] memory)
-    {
+    ) external view onlyExistingToken(tokenId) returns (ServiceEvent[] memory) {
         return _serviceHistory[tokenId];
     }
 
@@ -278,10 +311,7 @@ contract VehicleNFT is ERC721, Ownable {
         uint256 tokenId
     ) public view override onlyExistingToken(tokenId) returns (string memory) {
         string memory uri = _tokenURIs[tokenId];
-        require(
-            bytes(uri).length > 0,
-            "VehicleNFT: token URI not set"
-        );
+        require(bytes(uri).length > 0, "VehicleNFT: token URI not set");
         return uri;
     }
 
@@ -289,11 +319,10 @@ contract VehicleNFT is ERC721, Ownable {
 
     /// @notice Burn a vehicle NFT and clean up its data
     /// @dev Only the vehicle owner or contract owner can burn
-    function burnVehicle(
-        uint256 tokenId
-    ) external onlyExistingToken(tokenId) {
+    function burnVehicle(uint256 tokenId) external onlyExistingToken(tokenId) {
         require(
-            msg.sender == vehicles[tokenId].currentOwner || msg.sender == owner(),
+            msg.sender == vehicles[tokenId].currentOwner ||
+                msg.sender == owner(),
             "VehicleNFT: not authorized to burn"
         );
 

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type ActivityType = "MINT" | "PURCHASE" | "DELIVERY" | "SERVICE";
+export type ActivityType = "MINT" | "PURCHASE" | "DELIVERY" | "SERVICE" | "RENT";
 
 export interface ActivityItem {
     id: string;

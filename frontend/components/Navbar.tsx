@@ -10,8 +10,8 @@ export default function Navbar() {
 
     const navLinks = [
         { name: 'Marketplace', href: '/' },
+        { name: 'Orders', href: '/orders' },
         { name: 'My Garage', href: '/dashboard' },
-        { name: 'Admin', href: '/admin' },
     ];
 
     return (
@@ -20,11 +20,11 @@ export default function Navbar() {
                 <div className="flex items-center justify-between h-16">
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-2 group">
-                        <div className="w-8 h-8 bg-black text-white rounded-lg flex items-center justify-center font-bold text-lg group-hover:bg-gray-800 transition-colors">
-                            M
+                        <div className="w-10 h-10 bg-black text-white rounded-xl flex items-center justify-center font-serif font-bold text-xl tracking-tighter group-hover:bg-zinc-800 transition-colors shadow-lg shadow-black/20">
+                            MD
                         </div>
-                        <span className="font-semibold text-gray-900 tracking-tight">
-                            Monad Vehicle Twin
+                        <span className="font-bold text-xl text-gray-900 tracking-tight font-serif">
+                            MonaDrive
                         </span>
                     </Link>
 
@@ -37,8 +37,8 @@ export default function Navbar() {
                                     key={link.name}
                                     href={link.href}
                                     className={`text-sm font-medium transition-colors ${isActive
-                                            ? 'text-black'
-                                            : 'text-gray-500 hover:text-black'
+                                        ? 'text-black'
+                                        : 'text-gray-500 hover:text-black'
                                         }`}
                                 >
                                     {link.name}
