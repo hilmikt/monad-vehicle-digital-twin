@@ -1,12 +1,12 @@
-import { http, createConfig } from 'wagmi'
-import { injected } from 'wagmi/connectors'
-import { type Chain } from 'viem'
+import { http, createConfig } from 'wagmi';
+import { defineChain } from 'viem';
+import { injected } from 'wagmi/connectors';
 
-const chainId = Number(process.env.NEXT_PUBLIC_CHAIN_ID) || 10143; // Default to Monad Testnet ID if not set
-const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL || 'https://testnet-rpc.monad.xyz';
+const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || 'https://testnet-rpc.monad.xyz';
+const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID) || 10143;
 
-const customMonadChain: Chain = {
-    id: chainId,
+export const customMonadChain = defineChain({
+    id: CHAIN_ID,
     name: 'Monad Testnet',
     nativeCurrency: {
         decimals: 18,
@@ -14,19 +14,19 @@ const customMonadChain: Chain = {
         symbol: 'MON',
     },
     rpcUrls: {
-        default: { http: [rpcUrl] },
-        public: { http: [rpcUrl] },
+        default: { http: [RPC_URL] },
+    },
+    blockExplorers: {
+        default: { name: 'Monad Explorer', url: 'https://testnet.monadexplorer.com' }, // Assuming explorer URL
     },
     testnet: true,
-}
+});
 
 export const config = createConfig({
     chains: [customMonadChain],
     transports: {
-        [customMonadChain.id]: http(rpcUrl),
+        [customMonadChain.id]: http(RPC_URL),
     },
-    connectors: [
-        injected(),
-    ],
+    connectors: [injected()],
     ssr: true,
-})
+});

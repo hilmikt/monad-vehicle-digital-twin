@@ -1,8 +1,16 @@
-import vehicleNftJson from "../../../artifacts/contracts/VehicleNFT.sol/VehicleNFT.json";
+import { createPublicClient, http } from 'viem';
+import vehicleNftJson from "../../artifacts/contracts/VehicleNFT.sol/VehicleNFT.json";
 
+// Environment variables
+const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`;
+const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL!;
+const CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID);
+
+// Export ABI and Address
 export const vehicleNftAbi = vehicleNftJson.abi as const;
-export const vehicleNftAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`;
+export const vehicleNftAddress = CONTRACT_ADDRESS;
 
+// Types
 export type DeliveryStage = 0 | 1 | 2; // NotStarted, InTransit, Delivered
 
 export interface VehicleMetadata {
@@ -22,26 +30,25 @@ export interface VehicleView {
     metadata?: VehicleMetadata | null;
 }
 
-export const fetchMetadata = async (tokenURI: string): Promise<VehicleMetadata | null> => {
+export interface ServiceEventView {
+    timestamp: number;
+    description: string;
+    addedBy: string;
+}
+
+// Helper to fetch metadata
+export async function fetchMetadata(tokenURI: string): Promise<VehicleMetadata | null> {
     if (!tokenURI) return null;
 
-    // Handle simple JSON string (for demo/testing)
-    if (tokenURI.startsWith("{")) {
-        try {
-            return JSON.parse(tokenURI);
-        } catch (e) {
-            console.error("Failed to parse metadata JSON", e);
-            return null;
-        }
-    }
-
-    // Handle URL
     try {
-        const res = await fetch(tokenURI);
+        // Handle IPFS if needed, though user said HTTP(s) mostly
+        const url = tokenURI.replace("ipfs://", "https://ipfs.io/ipfs/");
+        const res = await fetch(url);
         if (!res.ok) throw new Error("Failed to fetch metadata");
-        return await res.json();
-    } catch (e) {
-        console.error("Failed to fetch metadata URL", e);
+        const json = await res.json();
+        return json as VehicleMetadata;
+    } catch (error) {
+        console.error("Error fetching metadata:", error);
         return null;
     }
-};
+}

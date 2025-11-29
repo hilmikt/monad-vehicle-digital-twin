@@ -1,84 +1,125 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
-import { useReadContract, useWriteContract, useAccount } from "wagmi";
-import { vehicleNftAbi, vehicleNftAddress } from "../../lib/contracts";
-import DeliveryTimeline from "../../components/DeliveryTimeline";
-import ServiceHistory from "../../components/ServiceHistory";
-import { formatEther, parseEther } from "viem";
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { readContract } from '@wagmi/core';
+import { parseEther, formatEther } from 'viem';
+import { config } from '../../lib/wagmiConfig';
+import {
+    vehicleNftAbi,
+    vehicleNftAddress,
+    VehicleView,
+    ServiceEventView,
+    fetchMetadata
+} from '../../lib/contracts';
+import { useActivityFeedStore } from '../../lib/activityStore';
+import DeliveryTimeline from '../../components/DeliveryTimeline';
+import ServiceHistory from '../../components/ServiceHistory';
+import StatPill from '../../components/StatPill';
 
-export default function VehicleDetail() {
-    const params = useParams();
-    const id = params.id as string;
-    const tokenId = BigInt(id);
+export default function VehicleDetailsPage() {
+    const { id } = useParams();
+    const tokenId = BigInt(id as string);
     const { address } = useAccount();
-    const { writeContract } = useWriteContract();
+    const { addActivity } = useActivityFeedStore();
 
-    const [serviceDescription, setServiceDescription] = useState("");
+    const [vehicle, setVehicle] = useState<VehicleView | null>(null);
+    const [serviceEvents, setServiceEvents] = useState<ServiceEventView[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    // Fetch vehicle details
-    const { data: vehicleData, isLoading: isVehicleLoading } = useReadContract({
-        address: vehicleNftAddress,
-        abi: vehicleNftAbi,
-        functionName: "vehicles",
-        args: [tokenId],
-    });
+    const [listPrice, setListPrice] = useState('');
+    const [serviceDesc, setServiceDesc] = useState('');
 
-    // Fetch service history
-    const { data: serviceHistory, isLoading: isHistoryLoading } = useReadContract({
-        address: vehicleNftAddress,
-        abi: vehicleNftAbi,
-        functionName: "getServiceEvents",
-        args: [tokenId],
-    });
+    const { data: hash, writeContract, isPending } = useWriteContract();
+    const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
 
-    // Fetch token URI (metadata)
-    const { data: tokenURI } = useReadContract({
-        address: vehicleNftAddress,
-        abi: vehicleNftAbi,
-        functionName: "tokenURI",
-        args: [tokenId],
-    });
+    const fetchData = async () => {
+        try {
+            const vData = await readContract(config, {
+                address: vehicleNftAddress,
+                abi: vehicleNftAbi,
+                functionName: 'getVehicle',
+                args: [tokenId],
+            }) as any;
 
-    const [metadata, setMetadata] = useState<any>(null);
+            const tokenUri = await readContract(config, {
+                address: vehicleNftAddress,
+                abi: vehicleNftAbi,
+                functionName: 'tokenURI',
+                args: [tokenId],
+            }) as string;
+
+            const meta = await fetchMetadata(tokenUri);
+
+            setVehicle({
+                tokenId: Number(tokenId),
+                currentOwner: vData.currentOwner,
+                price: vData.price,
+                listed: vData.listed,
+                deliveryStage: vData.deliveryStage,
+                metadata: meta,
+            });
+
+            const events = await readContract(config, {
+                address: vehicleNftAddress,
+                abi: vehicleNftAbi,
+                functionName: 'getServiceEvents',
+                args: [tokenId],
+            }) as any[];
+
+            setServiceEvents(events.map((e: any) => ({
+                timestamp: Number(e.timestamp),
+                description: e.description,
+                addedBy: e.addedBy,
+            })));
+
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        if (tokenURI) {
-            try {
-                // In a real app, fetch from IPFS/URL. For demo, we might have stored JSON string directly or need to fetch.
-                // Assuming simple JSON string for this demo if it starts with {
-                if (tokenURI.startsWith("{")) {
-                    setMetadata(JSON.parse(tokenURI));
-                } else {
-                    // Fetch from URL
-                    // fetch(tokenURI).then(res => res.json()).then(setMetadata);
-                    // Fallback for demo
-                    setMetadata({ model: "Unknown Model", year: 2024, image: "" });
-                }
-            } catch (e) {
-                console.error("Failed to parse metadata", e);
-            }
+        if (id) fetchData();
+    }, [id]);
+
+    useEffect(() => {
+        if (isConfirmed) {
+            fetchData();
+            addActivity({ type: 'SERVICE', message: `Action confirmed for Vehicle #${tokenId}`, txHash: hash });
         }
-    }, [tokenURI]);
+    }, [isConfirmed]);
 
-    if (isVehicleLoading || isHistoryLoading) {
-        return <div className="p-8 text-center">Loading vehicle details...</div>;
-    }
-
-    if (!vehicleData) {
-        return <div className="p-8 text-center">Vehicle not found.</div>;
-    }
-
-    const [currentOwner, price, listed, deliveryStage] = vehicleData as [string, bigint, boolean, number];
-
-    const handlePurchase = () => {
+    // Actions
+    const handleBuy = () => {
+        if (!vehicle) return;
         writeContract({
             address: vehicleNftAddress,
             abi: vehicleNftAbi,
-            functionName: "purchaseVehicle",
+            functionName: 'purchaseVehicle',
             args: [tokenId],
-            value: price,
+            value: vehicle.price,
+        });
+    };
+
+    const handleList = () => {
+        if (!listPrice) return;
+        writeContract({
+            address: vehicleNftAddress,
+            abi: vehicleNftAbi,
+            functionName: 'listVehicle',
+            args: [tokenId, parseEther(listPrice)],
+        });
+    };
+
+    const handleUnlist = () => {
+        writeContract({
+            address: vehicleNftAddress,
+            abi: vehicleNftAbi,
+            functionName: 'unlistVehicle',
+            args: [tokenId],
         });
     };
 
@@ -86,110 +127,162 @@ export default function VehicleDetail() {
         writeContract({
             address: vehicleNftAddress,
             abi: vehicleNftAbi,
-            functionName: "advanceDelivery",
+            functionName: 'advanceDelivery',
             args: [tokenId],
         });
     };
 
-    const handleAddService = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!serviceDescription) return;
-
+    const handleAddService = () => {
+        if (!serviceDesc) return;
         writeContract({
             address: vehicleNftAddress,
             abi: vehicleNftAbi,
-            functionName: "addServiceEvent",
-            args: [tokenId, serviceDescription],
+            functionName: 'addServiceEvent',
+            args: [tokenId, serviceDesc],
         });
-        setServiceDescription("");
     };
 
+    if (loading) return <div className="p-12 text-center text-gray-500">Loading vehicle details...</div>;
+    if (!vehicle) return <div className="p-12 text-center text-gray-500">Vehicle not found.</div>;
+
+    const isOwner = address && vehicle.currentOwner.toLowerCase() === address.toLowerCase();
+
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-lg">
-                <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
-                    <div>
-                        <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
-                            {metadata?.year} {metadata?.model}
-                        </h3>
-                        <p className="mt-1 max-w-2xl text-sm text-gray-500">Token ID: {id}</p>
-                    </div>
-                    <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                        {formatEther(price)} ETH
+        <div className="max-w-4xl mx-auto space-y-12">
+            {/* Top Section: Image & Title */}
+            <div className="text-center space-y-6">
+                <div className="relative w-full h-[400px] bg-white rounded-3xl shadow-xl shadow-gray-200/50 flex items-center justify-center overflow-hidden p-8 border border-gray-100">
+                    <img
+                        src={vehicle.metadata?.image || 'https://via.placeholder.com/800x500'}
+                        alt={vehicle.metadata?.name}
+                        className="w-full h-full object-contain mix-blend-multiply"
+                    />
+                    <div className="absolute top-6 right-6">
+                        {vehicle.listed ? <StatPill label="Listed for Sale" color="green" /> : <StatPill label="Not Listed" color="gray" />}
                     </div>
                 </div>
 
-                <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-5 sm:px-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div>
-                            {metadata?.image ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img src={metadata.image} alt={metadata.model} className="w-full h-auto rounded-lg shadow-md" />
-                            ) : (
-                                <div className="w-full h-64 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400">
-                                    No Image
-                                </div>
-                            )}
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900">{vehicle.metadata?.name || `Vehicle #${vehicle.tokenId}`}</h1>
+                    <p className="text-lg text-gray-500 mt-2">{vehicle.metadata?.model} • {vehicle.metadata?.year}</p>
+                </div>
+            </div>
 
-                            <div className="mt-6">
-                                <h4 className="text-sm font-medium text-gray-500">Owner</h4>
-                                <p className="mt-1 text-sm text-gray-900 dark:text-white font-mono">{currentOwner}</p>
-                            </div>
+            {/* Metadata Card */}
+            <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 p-10 space-y-10">
 
-                            <div className="mt-6">
-                                <h4 className="text-sm font-medium text-gray-500">Status</h4>
-                                <div className="mt-2">
-                                    <DeliveryTimeline deliveryStage={deliveryStage} />
-                                </div>
-                            </div>
+                {/* Section 1: Key Specs */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <div>
+                        <h3 className="text-xs font-bold text-gray-400 tracking-widest uppercase mb-2">Vehicle Model</h3>
+                        <p className="text-xl font-medium text-gray-900">{vehicle.metadata?.model || 'Unknown Model'}</p>
+                        <p className="text-sm text-gray-500 mt-1">{vehicle.metadata?.description}</p>
+                    </div>
+                    <div>
+                        <h3 className="text-xs font-bold text-gray-400 tracking-widest uppercase mb-2">Price</h3>
+                        <p className="text-xl font-medium text-gray-900">
+                            {vehicle.listed ? `${formatEther(vehicle.price)} MON` : 'Not Listed'}
+                        </p>
+                        <p className="text-sm text-gray-500 mt-1">
+                            Owner: <span className="font-mono text-gray-700">{vehicle.currentOwner.slice(0, 6)}...{vehicle.currentOwner.slice(-4)}</span>
+                            {isOwner && <span className="ml-2 text-emerald-600 font-bold">(You)</span>}
+                        </p>
+                    </div>
+                </div>
 
-                            <div className="mt-8 flex flex-col gap-4">
-                                {listed && currentOwner !== address && (
+                <div className="h-px bg-gray-100" />
+
+                {/* Section 2: Delivery */}
+                <div>
+                    <h3 className="text-xs font-bold text-gray-400 tracking-widest uppercase mb-4">Delivery Status</h3>
+                    <DeliveryTimeline stage={vehicle.deliveryStage} />
+                </div>
+
+                <div className="h-px bg-gray-100" />
+
+                {/* Section 3: Service Records */}
+                <div>
+                    <h3 className="text-xs font-bold text-gray-400 tracking-widest uppercase mb-4">Service Records</h3>
+                    <ServiceHistory events={serviceEvents} />
+                </div>
+
+                {/* Section 4: Actions */}
+                <div className="pt-6">
+                    {/* Buy Button */}
+                    {vehicle.listed && !isOwner && (
+                        <button
+                            onClick={handleBuy}
+                            disabled={isPending || isConfirming}
+                            className="w-full py-4 bg-black hover:bg-gray-800 text-white font-bold rounded-xl transition-all shadow-lg shadow-gray-200 disabled:opacity-50"
+                        >
+                            {isPending || isConfirming ? 'Processing...' : `Buy Now for ${formatEther(vehicle.price)} MON`}
+                        </button>
+                    )}
+
+                    {/* Owner Actions */}
+                    {isOwner && (
+                        <div className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {vehicle.listed ? (
                                     <button
-                                        onClick={handlePurchase}
-                                        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
+                                        onClick={handleUnlist}
+                                        disabled={isPending || isConfirming}
+                                        className="py-3 border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-colors"
                                     >
-                                        Purchase Vehicle
+                                        Unlist Vehicle
                                     </button>
+                                ) : (
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="number"
+                                            placeholder="Price (MON)"
+                                            value={listPrice}
+                                            onChange={(e) => setListPrice(e.target.value)}
+                                            className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 text-gray-900 focus:outline-none focus:border-black transition-colors"
+                                        />
+                                        <button
+                                            onClick={handleList}
+                                            disabled={!listPrice || isPending || isConfirming}
+                                            className="px-8 bg-black hover:bg-gray-800 text-white font-bold rounded-xl transition-colors disabled:opacity-50"
+                                        >
+                                            List
+                                        </button>
+                                    </div>
                                 )}
 
-                                {(currentOwner === address) && (
-                                    <button
-                                        onClick={handleAdvanceDelivery}
-                                        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-                                        disabled={deliveryStage >= 2}
-                                    >
-                                        Advance Delivery Stage
-                                    </button>
-                                )}
+                                <button
+                                    onClick={handleAdvanceDelivery}
+                                    disabled={vehicle.deliveryStage >= 2 || isPending || isConfirming}
+                                    className="py-3 border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Advance Delivery
+                                </button>
                             </div>
-                        </div>
 
-                        <div>
-                            <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Service History</h4>
-                            <ServiceHistory serviceEvents={serviceHistory as any[]} />
-
-                            <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
-                                <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-4">Add Service Event</h4>
-                                <form onSubmit={handleAddService} className="flex gap-4">
+                            {/* Add Service */}
+                            <div className="bg-gray-50 rounded-xl p-6 border border-gray-100">
+                                <h4 className="text-sm font-bold text-gray-900 mb-3">Add Service Entry</h4>
+                                <div className="flex gap-2">
                                     <input
                                         type="text"
-                                        value={serviceDescription}
-                                        onChange={(e) => setServiceDescription(e.target.value)}
-                                        placeholder="e.g. Oil Change, Tire Rotation"
-                                        className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 sm:text-sm p-2"
+                                        value={serviceDesc}
+                                        onChange={(e) => setServiceDesc(e.target.value)}
+                                        placeholder="e.g. Tire rotation, Software update..."
+                                        className="flex-1 bg-white border border-gray-200 rounded-lg px-4 py-2 text-gray-900 focus:outline-none focus:border-black"
                                     />
                                     <button
-                                        type="submit"
-                                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+                                        onClick={handleAddService}
+                                        disabled={!serviceDesc || isPending || isConfirming}
+                                        className="px-6 py-2 bg-white border border-gray-300 text-gray-900 font-bold rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
                                     >
-                                        Add Record
+                                        Add
                                     </button>
-                                </form>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    )}
                 </div>
+
             </div>
         </div>
     );

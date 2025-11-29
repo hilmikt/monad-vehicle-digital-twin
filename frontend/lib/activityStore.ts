@@ -17,15 +17,13 @@ interface ActivityState {
 
 export const useActivityFeedStore = create<ActivityState>((set) => ({
     activities: [],
-    addActivity: (item) =>
-        set((state) => ({
-            activities: [
-                {
-                    ...item,
-                    id: Math.random().toString(36).substring(7),
-                    timestamp: Date.now(),
-                },
-                ...state.activities,
-            ].slice(0, 50), // Keep last 50 items
-        })),
+    addActivity: (item) => set((state) => {
+        const newItem: ActivityItem = {
+            ...item,
+            id: Math.random().toString(36).substring(7),
+            timestamp: Date.now(),
+        };
+        // Keep only latest 50
+        return { activities: [newItem, ...state.activities].slice(0, 50) };
+    }),
 }));
