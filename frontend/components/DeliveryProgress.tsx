@@ -20,22 +20,27 @@ export default function DeliveryProgress({ currentStopIndex, stops }: DeliveryPr
                     <div key={stop} className="relative flex items-center gap-4 text-sm z-10">
                         <div
                             className={clsx(
-                                "h-6 w-6 flex items-center justify-center transition-all duration-500 bg-zinc-900",
-                                isCurrent ? "opacity-100 scale-110" : "opacity-30 grayscale"
+                                "h-6 w-6 flex items-center justify-center transition-all duration-500 rounded-full",
+                                isPast ? "bg-emerald-500 text-black" : "bg-zinc-900",
+                                isCurrent ? "opacity-100 scale-110" : isPast ? "opacity-100" : "opacity-30 grayscale"
                             )}
                         >
-                            <span className="text-lg leading-none">🚚</span>
+                            {isPast ? (
+                                <span className="text-xs font-bold">✓</span>
+                            ) : (
+                                <span className="text-lg leading-none">🚚</span>
+                            )}
                         </div>
                         <span
                             className={clsx(
                                 "transition-colors duration-500",
-                                (isCurrent || isPast) ? "text-white font-medium" : "text-zinc-500"
+                                isPast ? "text-emerald-500 font-medium" : isCurrent ? "text-white font-bold" : "text-zinc-500"
                             )}
                         >
                             {stop}
                         </span>
                         {isCurrent && (
-                            <div className="absolute left-[3px] top-[3px] h-5 w-5 rounded-full bg-emerald-500/30 animate-ping" />
+                            <div className="absolute left-[3px] top-[3px] h-5 w-5 rounded-full bg-blue-500/30 animate-ping" />
                         )}
                     </div>
                 );

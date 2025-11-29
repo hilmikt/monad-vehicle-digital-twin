@@ -1,66 +1,84 @@
-# Monad Vehicle Digital Twin
+# MonaDrive - Vehicle Digital Twin on Monad
 
-## Description
-A digital twin for cars represented as NFTs. Each vehicle is an NFT that captures marketplace listing, delivery lifecycle (Not Started, In Transit, Delivered), and service history. This project demonstrates a complete flow from minting to delivery tracking and service logging on-chain.
+## Overview
+**MonaDrive** is a premium digital twin marketplace for vehicles, built on the Monad Testnet. It bridges the gap between physical vehicles and digital ownership by representing each car as a dynamic NFT. This NFT tracks the vehicle's entire lifecycle: from the showroom floor, through the delivery process, to its service history.
+
+## Key Features
+
+### 🛒 Digital Marketplace
+- **Browse & Buy**: Explore a curated selection of premium vehicles (Tesla, Rivian, BMW).
+- **Instant Purchase**: Buy vehicles directly on-chain using native MON tokens.
+- **Infinite Demo**: Experience the buying flow repeatedly with our "Infinite Fleet" of Rivian R1Ts.
+
+### 🚚 Live Delivery Tracking
+- **Real-Time Updates**: Watch your vehicle move from "Factory" to "Regional Hub" to "Delivery Center".
+- **Visual Progress**: A dynamic, animated delivery tracker shows exactly where your vehicle is.
+- **On-Chain Status**: Delivery stages (Not Started, In Transit, Delivered) are stored on the blockchain.
+
+### 🔧 Service History & Digital Logbook
+- **Immutable Records**: All service events (maintenance, repairs, upgrades) are recorded on-chain.
+- **Odometer Tracking**: Service logs include odometer readings for verifiable mileage history.
+- **Owner Dashboard**: Manage your garage, view service history, and track delivery status in one place.
+
+### 🏎️ "My Garage" Experience
+- **Digital Ownership**: View all your owned vehicles in a sleek, Tesla-inspired dashboard.
+- **Actions**: Rent out your vehicle, sell it, or log a new service event.
+- **Live Activity Feed**: A real-time feed of all marketplace actions (Purchases, Rentals, Services).
 
 ## Tech Stack
-- **Blockchain**: Solidity, Hardhat, Monad/EVM Testnet
-- **Frontend**: Next.js 14+ (App Router), TypeScript, Tailwind CSS
-- **Web3**: Wagmi, Viem
+- **Blockchain**: Solidity, Hardhat, Monad Testnet (Chain ID: 10143)
+- **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS
+- **Web3 Integration**: Wagmi v2, Viem, TanStack Query
+- **Styling**: Custom CSS animations, Glassmorphism, Premium Dark Mode
 
-## Setup Steps
-1. **Clone the repository**
-   ```bash
-   git clone <repo-url>
-   cd vehicle-digital-twin
-   ```
+## Setup & Installation
 
-2. **Install Dependencies**
-   Root (Hardhat):
-   ```bash
-   npm install
-   ```
-   Frontend:
-   ```bash
-   cd frontend
-   npm install
-   ```
+### Prerequisites
+- Node.js v18+
+- A Monad Testnet wallet with funds (MON)
 
-3. **Environment Configuration**
-   Copy `.env.example` to `.env` in the root directory and fill in the values:
-   ```bash
-   cp .env.example .env
-   ```
-   - `TESTNET_RPC_URL`: Your EVM testnet RPC URL.
-   - `PRIVATE_KEY`: Your wallet private key (ensure it has funds).
-   - `NEXT_PUBLIC_CONTRACT_ADDRESS`: (After deployment) The address of the deployed VehicleNFT contract.
-   - `NEXT_PUBLIC_CHAIN_ID`: Chain ID of your testnet.
-   - `NEXT_PUBLIC_RPC_URL`: Same as TESTNET_RPC_URL or a public one for the frontend.
+### 1. Clone the Repository
+```bash
+git clone <repo-url>
+cd monad-vehicle-digital-twin
+```
 
-## Commands
+### 2. Install Dependencies
+**Root (Hardhat & Scripts):**
+```bash
+npm install
+```
 
-- **Compile Contracts**:
-  ```bash
-  npx hardhat compile
-  ```
+**Frontend:**
+```bash
+cd frontend
+npm install
+```
 
-- **Deploy Contracts**:
-  ```bash
-  npx hardhat run scripts/deploy.ts --network testnet
-  ```
-  *Note: After deployment, update `NEXT_PUBLIC_CONTRACT_ADDRESS` in `.env`.*
+### 3. Environment Configuration
+Create a `.env` file in the root directory:
+```env
+PRIVATE_KEY=your_wallet_private_key
+NEXT_PUBLIC_CONTRACT_ADDRESS=0xFB143834dE4d0C8b44b9EF48630052CEd91Fde66
+NEXT_PUBLIC_RPC_URL=https://testnet-rpc.monad.xyz
+NEXT_PUBLIC_CHAIN_ID=10143
+```
 
-- **Start Frontend**:
-  ```bash
-  cd frontend
-  npm run dev
-  ```
+### 4. Run the Application
+**Start the Frontend:**
+```bash
+cd frontend
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## Walkthrough
-1. **Mint/List**: The owner can mint new vehicle NFTs which are automatically listed.
-2. **Purchase**: Users can connect their wallet and purchase listed vehicles.
-3. **Delivery**: The owner can advance the delivery stage (Not Started -> In Transit -> Delivered).
-4. **Service History**: Service centers (or any user in this demo) can add service records to the vehicle's history.
+## Demo Flow
+1.  **Connect Wallet**: Click "Connect Wallet" in the top right.
+2.  **Buy a Car**: Go to the Marketplace, select the **Rivian R1T**, and click "Buy". Confirm the transaction.
+3.  **Track Delivery**: Watch the delivery animation in the success screen or check "Orders".
+4.  **Check Garage**: Go to "My Garage" to see your new vehicle.
+5.  **Add Service**: Click "Add Service Log", enter details (e.g., "Tire Rotation", "5,000 mi"), and confirm.
+6.  **Verify**: See the new service badge appear on your vehicle card.
 
-## Notes
-This is a hackathon prototype. Future extensions could include real GPS integration via oracles, authorized service center whitelisting, and financing integrations.
+## License
+MIT

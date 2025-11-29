@@ -3,13 +3,13 @@ export const IN_TRANSIT_COUNT = 2;
 export const demoOrdersInTransit = [
     {
         id: "order-1",
-        name: "Tesla Model 3 Long Range",
-        model: "Model 3",
+        name: "Rivian R1T",
+        model: "R1T",
         year: "2023",
-        image: "https://digitalassets.tesla.com/tesla-contents/image/upload/f_auto,q_auto/Model-3-Main-Hero-Desktop-LHD.png",
+        image: "https://cdni.autocarindia.com/ExtraImages/20181128023148_94-rivian-r1t-reveal-static-front.jpg",
         expectedInDays: 4,
         routeStops: [
-            "Factory – Fremont, CA",
+            "Factory – Normal, IL",
             "Regional Hub – Dallas, TX",
             "Delivery Center – Miami, FL",
         ],
