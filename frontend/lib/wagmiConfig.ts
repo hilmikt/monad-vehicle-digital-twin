@@ -1,23 +1,32 @@
 import { http, createConfig } from 'wagmi'
-import { mainnet, sepolia, hardhat } from 'wagmi/chains'
+import { injected } from 'wagmi/connectors'
+import { type Chain } from 'viem'
 
-// Define the chain to use. Defaulting to hardhat for local dev if env var not present.
-// In production, you would check NEXT_PUBLIC_CHAIN_ID and map it to a chain object.
-const chainId = process.env.NEXT_PUBLIC_CHAIN_ID ? parseInt(process.env.NEXT_PUBLIC_CHAIN_ID) : hardhat.id;
+const chainId = Number(process.env.NEXT_PUBLIC_CHAIN_ID) || 10143; // Default to Monad Testnet ID if not set
+const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL || 'https://testnet-rpc.monad.xyz';
 
-// Helper to get chain object
-const getChain = (id: number) => {
-    if (id === sepolia.id) return sepolia;
-    if (id === mainnet.id) return mainnet;
-    return hardhat;
+const customMonadChain: Chain = {
+    id: chainId,
+    name: 'Monad Testnet',
+    nativeCurrency: {
+        decimals: 18,
+        name: 'Monad',
+        symbol: 'MON',
+    },
+    rpcUrls: {
+        default: { http: [rpcUrl] },
+        public: { http: [rpcUrl] },
+    },
+    testnet: true,
 }
 
 export const config = createConfig({
-    chains: [getChain(chainId)],
+    chains: [customMonadChain],
     transports: {
-        [mainnet.id]: http(),
-        [sepolia.id]: http(),
-        [hardhat.id]: http(),
+        [customMonadChain.id]: http(rpcUrl),
     },
+    connectors: [
+        injected(),
+    ],
     ssr: true,
 })
