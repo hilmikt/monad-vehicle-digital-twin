@@ -1,0 +1,15 @@
+node_modules
+.env
+.env.local
+.cache
+.cache-loader
+dist
+out
+artifacts
+cache
+coverage
+.DS_Store
+next-env.d.ts
+frontend/.next
+frontend/node_modules
+typechain-types
