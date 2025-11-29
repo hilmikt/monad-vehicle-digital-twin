@@ -228,13 +228,7 @@ export default function DashboardPage() {
                                         </span>
                                     }
                                     latestService={
-                                        // Fetch latest service for demo vehicles (mapped to ID 1 and 2)
-                                        // Since we can't easily async fetch here in render, we'll rely on a separate effect or just show "Loading..." if we want to be perfect.
-                                        // But for simplicity, let's try to find the matching on-chain vehicle if it's already loaded in 'vehicles' array?
-                                        // No, 'vehicles' only contains owned vehicles. If demo ID 1/2 is owned, it's in there.
-                                        vehicles.find(v => v.tokenId === demo.tokenId)?.serviceRecords?.length
-                                            ? vehicles.find(v => v.tokenId === demo.tokenId)?.serviceRecords?.slice(-1)[0]?.description
-                                            : undefined
+                                        vehicles.find(v => v.tokenId === demo.tokenId)?.serviceRecords?.[0]?.description
                                     }
                                 />
                             </div>

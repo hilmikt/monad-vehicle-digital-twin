@@ -92,7 +92,7 @@ export default function VehicleCard({
                 </div>
 
                 {/* Latest Service Display */}
-                {latestService && (
+                {typeof latestService === 'string' && latestService.length > 0 && (
                     <div className="mb-4 p-3 bg-zinc-800/50 border border-white/5 rounded-xl flex flex-col gap-2">
                         <div className="flex items-center justify-between">
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-orange-500/10 text-orange-400 border-orange-500/20 uppercase">

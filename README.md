@@ -39,7 +39,7 @@
 
 ### 1. Clone the Repository
 ```bash
-git clone <repo-url>
+git clone https://github.com/hilmikt/monad-vehicle-digital-twin
 cd monad-vehicle-digital-twin
 ```
 
