@@ -5,18 +5,18 @@ import { useParams } from 'next/navigation';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { readContract } from '@wagmi/core';
 import { parseEther, formatEther } from 'viem';
-import { config } from '../../lib/wagmiConfig';
+import { config } from '../../../lib/wagmiConfig';
 import {
     vehicleNftAbi,
     vehicleNftAddress,
     VehicleView,
     ServiceEventView,
     fetchMetadata
-} from '../../lib/contracts';
-import { useActivityFeedStore } from '../../lib/activityStore';
-import DeliveryTimeline from '../../components/DeliveryTimeline';
-import ServiceHistory from '../../components/ServiceHistory';
-import StatPill from '../../components/StatPill';
+} from '../../../lib/contracts';
+import { useActivityFeedStore } from '../../../lib/activityStore';
+import DeliveryTimeline from '../../../components/DeliveryTimeline';
+import ServiceHistory from '../../../components/ServiceHistory';
+import StatPill from '../../../components/StatPill';
 
 export default function VehicleDetailsPage() {
     const { id } = useParams();
