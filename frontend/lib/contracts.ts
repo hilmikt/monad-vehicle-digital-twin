@@ -1,5 +1,5 @@
 import { createPublicClient, http } from 'viem';
-import vehicleNftJson from "../../artifacts/contracts/VehicleNFT.sol/VehicleNFT.json";
+import vehicleNftJson from "./abi/VehicleNFT.json";
 
 // Environment variables
 // Environment variables
